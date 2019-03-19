@@ -3,14 +3,14 @@
 
 import time
 import numpy as np
-import torch
 
 def getCoreFrom4Point(*pnts):
 
     if len(pnts) is not 4:
-        print("Invalid number of points. (Required 4, got %d.)"%(len(pnts)))
+        print("Error in getCoreFrom4Point: invalid number of points. (Required 4, got %d.)"%(len(pnts)))
         return
 
+    #p0, p1, p2, p3 = np.array(pnts[0]), np.array(pnts[1]), np.array(pnts[2]), np.array(pnts[3])
     a0, b0, c0 = pnts[0][0]-pnts[1][0], pnts[0][1]-pnts[1][1], pnts[0][2]-pnts[1][2]
     a1, b1, c1 = pnts[1][0]-pnts[2][0], pnts[1][1]-pnts[2][1], pnts[1][2]-pnts[2][2]
     a2, b2, c2 = pnts[2][0]-pnts[3][0], pnts[2][1]-pnts[3][1], pnts[2][2]-pnts[3][2]
@@ -18,65 +18,51 @@ def getCoreFrom4Point(*pnts):
     k1 = 1/2.0*(pnts[1][0]**2-pnts[2][0]**2+pnts[1][1]**2-pnts[2][1]**2+pnts[1][2]**2-pnts[2][2]**2)
     k2 = 1/2.0*(pnts[2][0]**2-pnts[3][0]**2+pnts[2][1]**2-pnts[3][1]**2+pnts[2][2]**2-pnts[3][2]**2)
 
-    # 370+ ms
+    #if np.dot(np.cross(p0-p1,p0-p2),p0-p3) == 0:# too slow to use numpy, so expand them as below
+    x0, y0, z0 = pnts[0][0]-pnts[1][0], pnts[0][1]-pnts[1][1], pnts[0][2]-pnts[1][2]
+    x1, y1, z1 = pnts[0][0]-pnts[2][0], pnts[0][1]-pnts[2][1], pnts[0][2]-pnts[2][2]
+    x2, y2, z2 = y0*z1-y1*z0, -(x0*z1-x1*z0), x0*y1-x1*y0
+    x3, y3, z3 = pnts[0][0]-pnts[3][0], pnts[0][1]-pnts[3][1], pnts[0][2]-pnts[3][2]
+    if x2*x3+y2*y3+z2*z3 == 0:
+        print("Error in getCoreFrom4Point: input points are coplane.")
+        return
+    
     D = a0*b1*c2+a2*b0*c1+a1*b2*c0 - (a2*b1*c0+a1*b0*c2+a0*b2*c1)
     Dx = k0*b1*c2+k2*b0*c1+k1*b2*c0 - (k2*b1*c0+k1*b0*c2+k0*b2*c1)
     Dy = a0*k1*c2+a2*k0*c1+a1*k2*c0 - (a2*k1*c0+a1*k0*c2+a0*k2*c1)
     Dz = a0*b1*k2+a2*b0*k1+a1*b2*k0 - (a2*b1*k0+a1*b0*k2+a0*b2*k1)
 
-    # 1900+ ms
-    #D = np.linalg.det(np.array([[a0,b0,c0],[a1,b1,c1],[a2,b2,c2]]))
-    #Dx = np.linalg.det(np.array([[k0,b0,c0],[k1,b1,c1],[k2,b2,c2]]))
-    #Dy = np.linalg.det(np.array([[a0,k0,c0],[a1,k1,c1],[a2,k2,c2]]))
-    #Dz = np.linalg.det(np.array([[a0,b0,k0],[a1,b1,k1],[a2,b2,k2]]))
-
     return (Dx/D, Dy/D, Dz/D)
 
-'''
-# np.linalg.solve edition. 840+ ms, BAD
-def getCoreFrom4Point02(*pnts):
-
-    if len(pnts) is not 4:
-        print("Invalid number of points. (Required 4, got %d.)"%(len(pnts)))
-        return
-    
-    para_left = np.array([
-            [pnts[0][0]-pnts[1][0], pnts[0][1]-pnts[1][1], pnts[0][2]-pnts[1][2]],
-            [pnts[1][0]-pnts[2][0], pnts[1][1]-pnts[2][1], pnts[1][2]-pnts[2][2]],
-            [pnts[2][0]-pnts[3][0], pnts[2][1]-pnts[3][1], pnts[2][2]-pnts[3][2]]
-            ])
-    para_right = np.array([
-            1/2.0*(pnts[0][0]**2-pnts[1][0]**2+pnts[0][1]**2-pnts[1][1]**2+pnts[0][2]**2-pnts[1][2]**2),
-            1/2.0*(pnts[1][0]**2-pnts[2][0]**2+pnts[1][1]**2-pnts[2][1]**2+pnts[1][2]**2-pnts[2][2]**2),
-            1/2.0*(pnts[2][0]**2-pnts[3][0]**2+pnts[2][1]**2-pnts[3][1]**2+pnts[2][2]**2-pnts[3][2]**2)
-            ])
-
-    return np.linalg.solve(para_left, para_right)
-'''
 
 if __name__ =='__main__':
     
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-        p1, p2, p3, p4 = [],[],[],[]
-        for i in range(128*416):
-            p1.append(torch.tensor([1+i*0.001,0,0],device=device))
-            p2.append(torch.tensor([0.1,1.0,0],device=device))
-            p3.append(torch.tensor([0.1,-1.0,0],device=device))
-            p4.append(torch.tensor([0.1,0,1+i*0.001],device=device))
-        
-        t0 = time.clock()
-        for i in range(128*416):
-            ans = getCoreFrom4Point(p1[i],p2[i],p3[i],p4[i])
-        t1 = time.clock()
-    
+    print(getCoreFrom4Point((1,0,0),(-1,0,0),(0,1,0),(0,0,1)))                  # 0,0,0
+    print(getCoreFrom4Point((1,0,0),(-1,0,0),(0,-1,0),(0,0,-1)))                # 0,0,0
+    print(getCoreFrom4Point((1,np.sqrt(3),0),(0,0,2),(0,0,-2),(2,0,0)))         # 0,0,0
+    print(getCoreFrom4Point((1,np.sqrt(5),np.sqrt(3)),(0,0,-3),(0,3,0),(3,0,0)))# 0,0,0
+    print(getCoreFrom4Point((1,2,4),(1,2,2),(1,1,3),(2,2,3)))                   # 1, 2, 3
+    print(getCoreFrom4Point((np.sqrt(0.5)+1,2.5,2.5),(1,3,3),(0,2,3),(1,2,2)))  # 1, 2, 3
+    print(getCoreFrom4Point((1+np.sqrt(2),1,4),(-1,2,3),(1,4,3),(3,2,3)))       # 1, 2, 3
+    print(getCoreFrom4Point((1,2,4),(2,2,3),(1,1,3),(1,2,2)))                   # 1, 2, 3
+    print(getCoreFrom4Point((2,1,3+np.sqrt(2)),(-1,2,3),(1,0,3),(3,2,3)))       # 1, 2, 3
+    print(getCoreFrom4Point((2,2+np.sqrt(2),4),(1,2,5),(1,4,3),(3,2,3)))        # 1, 2, 3
+    print(getCoreFrom4Point((2.5,2+np.sqrt(1.5),3.5),(1,2,5),(1,4,3),(3,2,3)))  # 1, 2, 3
+    print(getCoreFrom4Point((10,0,0),(8,0,0),(9,1,0),(9,0,1)))                  # 9,0,0
+    print(getCoreFrom4Point((1,9,0),(-1,9,0),(0,10,0),(0,9,1)))                 # 0,9,0
+    print(getCoreFrom4Point((1,0,9),(-1,0,9),(0,1,9),(0,0,10)))                 # 0,0,9
+    print(getCoreFrom4Point((1.1,0,0),(0.1,1.0,0),(0.1,-1.0,0),(0.1,0,1.0)))    # 0.1, 0, 0
+    print(getCoreFrom4Point((3,4,6),(3,4,4),(2,4,5),(3,5,5)))                   # 3, 4, 5
 
-    #ans = getCoreFrom4Point((1+i*0.001,0,0),(0.1,1.0,0),(0.1,-1.0,0),(0.1,0,1+i*0.001))
-    #print(getCoreFrom4Point((1.1,0,0),(0.1,1.0,0),(0.1,-1.0,0),(0.1,0,1.0)))    # 0.1, 0, 0
-    #print(getCoreFrom4Point((3,4,6),(3,4,4),(2,4,5),(3,5,5)))                   # 3, 4, 5
-    #print(getCoreFrom4Point((1,2,4),(1,2,2),(1,1,3),(2,2,3)))                   # 1, 2, 3
-    
-    
-    
-    #print('final result: %f, %f, %f' % (ans[0], ans[1], ans[2]) )
-        print('time cost: %f s'%(t1-t0))
+    print(getCoreFrom4Point((1,2,4),(1,2,2),(1,1,3)))   # Error
+    print(getCoreFrom4Point((1,2,4),(1,2,2),(1,1,3),(1,2,3),(0,0,0)))   # Error
+
+    print(getCoreFrom4Point((1,2,4),(1,2,2),(1,1,3),(1,2,3)))   # Error
+    print(getCoreFrom4Point((1,2,2),(1,2,5),(1,2,9),(1,2,3)))   # Error
+
+    t0 = time.clock()
+    for i in range(128*416):
+        ans = getCoreFrom4Point((1+i*0.001,0,0),(0.1,1.0,0),(0.1,-1.0,0),(0.1,0,1+i*0.001))
+    t1 = time.clock()
+    print('time cost: %f s'%(t1-t0))
+
