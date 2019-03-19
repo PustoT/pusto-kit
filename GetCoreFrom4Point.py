@@ -54,16 +54,29 @@ def getCoreFrom4Point02(*pnts):
     return np.linalg.solve(para_left, para_right)
 '''
 
+if __name__ =='__main__':
+    
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        p1, p2, p3, p4 = [],[],[],[]
+        for i in range(128*416):
+            p1.append(torch.tensor([1+i*0.001,0,0],device=device))
+            p2.append(torch.tensor([0.1,1.0,0],device=device))
+            p3.append(torch.tensor([0.1,-1.0,0],device=device))
+            p4.append(torch.tensor([0.1,0,1+i*0.001],device=device))
+        
+        t0 = time.clock()
+        for i in range(128*416):
+            ans = getCoreFrom4Point(p1[i],p2[i],p3[i],p4[i])
+        t1 = time.clock()
+    
 
-t0 = time.clock()
-
-for i in range(128*416):
-    ans = getCoreFrom4Point((1+i*0.001,0,0),(0.1,1.0,0),(0.1,-1.0,0),(0.1,0,1+i*0.001))
+    #ans = getCoreFrom4Point((1+i*0.001,0,0),(0.1,1.0,0),(0.1,-1.0,0),(0.1,0,1+i*0.001))
     #print(getCoreFrom4Point((1.1,0,0),(0.1,1.0,0),(0.1,-1.0,0),(0.1,0,1.0)))    # 0.1, 0, 0
-#print(getCoreFrom4Point((3,4,6),(3,4,4),(2,4,5),(3,5,5)))                   # 3, 4, 5
-#print(getCoreFrom4Point((1,2,4),(1,2,2),(1,1,3),(2,2,3)))                   # 1, 2, 3
-
-t1 = time.clock()
-
-print('final result: %f, %f, %f' % (ans[0], ans[1], ans[2]) )
-print('time cost: %f s'%(t1-t0))
+    #print(getCoreFrom4Point((3,4,6),(3,4,4),(2,4,5),(3,5,5)))                   # 3, 4, 5
+    #print(getCoreFrom4Point((1,2,4),(1,2,2),(1,1,3),(2,2,3)))                   # 1, 2, 3
+    
+    
+    
+    #print('final result: %f, %f, %f' % (ans[0], ans[1], ans[2]) )
+        print('time cost: %f s'%(t1-t0))
