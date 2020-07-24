@@ -1,7 +1,19 @@
+# 将拼音方案的拼音处理为方便语音分析的改版拼音；提供将改版拼音转换为标准拼音的接口；
+# 用规则由原拼音生成多个与之相似的拼音，即模糊匹配；每个原拼音串生成多个模糊匹配拼音串，进而生成对应的可能的汉字串；
+# 汉字串列表在数据库中检索，给每个匹配的加上频率，删除无匹配的；
 # 韵母表如下，由于数量有限，模糊规则中对介音、韵腹、韵尾不分开处理。
 # a, o, e, ai, ei, ao, ou, an, en, ang, eng
-# i, u, v, ia, ua, uo, ie, ve, uai, ui, iao, iu, ian, uan, van, in, un, vn, iang, uang, ing, ueng, iong, ong
+# i, u, v, ia, ua, uo, ie, ve, uai, ui, iao, iu, ian, uan, van, in, un, vn, iang, uang, ing, iong, ong
 # y、w 处理为零声母：yu - v, y - i, w - u
+# ueng 与 ong 互补，仅在零声母出现，统一使用 ong
+
+# exemple dusage
+"""
+from pinyin_speech_correction import pinyins2fuzzies
+csv_pinyin_str = "['wu4', 'xing2', 'gan1', 'yan2']"
+pinyins = eval(csv_pinyin_str)
+hanzi_seqs = pinyins2fuzzies(pinyins)
+"""
 
 def devide_pinyin(orig):
     """
@@ -18,7 +30,7 @@ def devide_pinyin(orig):
                 orig = "i" + orig[2:]
             elif orig[1] == "u":
                 orig = "v" + orig[2:]
-            elif orig[1:3] == "ou":
+            elif orig[1:] == "ou":
                 orig = "iu"
             else:
                 orig = "i" + orig[1:]
@@ -27,6 +39,8 @@ def devide_pinyin(orig):
                 orig = "u" + orig[2:]
             elif orig[1:] == "en":
                 orig = "un"
+            elif orig[1:] == "eng":
+                orig = "ong"
             elif orig[1:] == "ei":
                 orig = "ui"
             else:
@@ -53,23 +67,15 @@ def devide_pinyin(orig):
 def build_pinyin(sheng, yun, diao = ""):
     res = ""
     # use y, w for some of those without shengmu
+    ius = ["i",  "in",  "ing",  "iu",  "un",  "ong",  "ui",  "u"]
+    yws = ["yi", "yin", "ying", "you", "wen", "weng", "wei", "wu"]
     if sheng == "" :
-        if yun in ["i", "in", "ing"]:
-            res = "y" + yun
-        elif yun == "iu":
-            res = "you"
+        if yun in ius:
+            res = yws[ius.index(yun)]
         elif yun[0] == "i":
             res = "y" + yun[1:]
         elif yun[0] == "v":
             res = "yu" + yun[1:]
-        elif yun == "un":
-            res = "wen"
-        elif yun == "ueng" or yun == "ong":
-            res = "weng"
-        elif yun == "ui":
-            res = "wei"
-        elif yun == "u":
-            res = "wu"
         elif yun[0] == "u":
             res = "w" + yun[1:]
         else:
@@ -92,7 +98,6 @@ def fuzzy_pinyins(orig):
     returns:
         res: result
     """
-
     # 替代：声调、平翘舌、前后鼻音、n-l、hu*-fu*、送气不送气、介音混淆（齐齿-撮口、开口-合口）
     # （替代之暂未开启：b-m, n-y（蜗牛-我有））
     # （暂未开启）（插入/删除：介音、韵尾、某些声母、零声母（西安仙））
@@ -101,37 +106,13 @@ def fuzzy_pinyins(orig):
     sheng, yun, diao = "", "", ""
 
     # 若是拉丁字母，小处理
+    latin2pinyin = {"A":("", "ei"), "B":("b", "i"),  "C":("s", "ei"),  "D":("d", "i"),
+                    "E":("", "i"),  "G":("j", "i"),  "J":("zh", "ei"), "K":("k", "ei"),
+                    "N":("", "en"), "Q":("q", "iu"), "R":("", "a"),    "U":("", "iu"),
+                    "V":("", "ui"), "Y":("", "uai"), "Z":("z", "ei")}
     if  len(orig) == 1:
-        if orig.upper() == "A":
-            yun = "ei"
-        elif orig.upper() == "B":
-            sheng, yun = "b", "i"
-        elif orig.upper() == "C":
-            sheng, yun = "s", "ei"
-        elif orig.upper() == "D":
-            sheng, yun = "d", "i"
-        elif orig.upper() == "E":
-            sheng, yun = "", "i"
-        elif orig.upper() == "G":
-            sheng, yun = "j", "i"
-        elif orig.upper() == "J":
-            sheng, yun = "zh", "ei"
-        elif orig.upper() == "K":
-            sheng, yun = "k", "ei"
-        elif orig.upper() == "N":
-            sheng, yun = "", "en"
-        elif orig.upper() == "Q":
-            sheng, yun = "q", "iu"
-        elif orig.upper() == "R":
-            sheng, yun = "", "a"
-        elif orig.upper() == "U":
-            sheng, yun = "", "iu"    
-        elif orig.upper() == "V":
-            sheng, yun = "", "ui"
-        elif orig.upper() == "Y":
-            sheng, yun = "", "uai"
-        elif orig.upper() == "Z":
-            sheng, yun = "z", "ei"
+        if orig.upper() in latin2pinyin.keys():
+            sheng, yun = latin2pinyin[orig.upper()]
         else:
             sheng, yun = "", "ai"
     else:
@@ -147,14 +128,12 @@ def fuzzy_pinyins(orig):
         temp.append((sheng[0], yun))
     
     # 前后鼻音
-    if yun in ["an", "en", "in", "ian", "uan"]:
-        temp.append((sheng, yun + "g"))
-    elif yun == "un":
-        temp.append((sheng, "ueng"))
-    elif yun in ["ang", "eng", "ing", "iang", "uang"]:
-        temp.append((sheng, yun[:-1]))
-    elif yun == "ueng":
-        temp.append((sheng, "un")) 
+    _n =  ["an",  "en",  "in",  "ian",  "uan",  "un"]
+    _ng = ["ang", "eng", "ing", "iang", "uang", "ong"]
+    if yun in _n:
+        temp.append((sheng, _ng[_n.index(yun)]))
+    elif yun in _ng:
+        temp.append((sheng, _n[_ng.index(yun)]))
     
     # n-1
     if sheng == "n":
@@ -163,38 +142,22 @@ def fuzzy_pinyins(orig):
         temp.append(("n", yun))
     
     # hu*-fu*
-    if sheng == "h":
-        if yun == "u":
-            temp.append(("f", "u"))
-        elif yun == "un":
-            temp.append(("f", "en"))
-        elif yun == "ui":
-            temp.append(("f", "ei"))
-        elif yun[0] == "u":
-            temp.append(("f", yun[1:])) 
-        elif yun == "ong":
-            temp.append(("f", "eng")) 
-    elif sheng == "f":
-        if yun == "u":
-            temp.append(("h", "u"))
-        elif yun == "en":
-            temp.append(("h", "un"))
-        elif yun == "ei":
-            temp.append(("h", "ui"))
-        elif yun in ["an", "ang", "o", "ang", "a", "ai"]:
-            temp.append(("h", "u" + yun))
-        elif yun == "eng":
-            temp.append(("h", "ong"))
+    hu = [("h", "u"), ("h", "un"), ("h", "ui"), ("h", "ong"), 
+            ("h", "uan"), ("h", "uang"), ("h", "uo"), ("h", "ua")] # , ("h", "uai")
+    fu = [("f", "u"), ("f", "en"), ("f", "ei"), ("f", "eng"), 
+            ("f", "an"),  ("f", "ang"),  ("f", "o"),  ("f", "a")] # , ("f", "ai")
+    if sheng == "h" and (sheng, yun) in hu:
+        temp.append(fu[hu.index((sheng, yun))]) 
+    elif sheng == "f" and (sheng, yun) in fu:
+        temp.append(hu[fu.index((sheng, yun))]) 
 
     # 送气-不送气
-    #asp = ["p", "t", "k", "q", "ch", "c"]
-    #unasp = ["b", "d", "g", "j", "zh", "z"]
-    asp2unasp = {"p":"b", "t":"d", "k":"g", "q":"j", "ch":"zh", "c":"z"}
-    unasp2asp = {"b":"p", "d":"t", "g":"k", "j":"q", "zh":"ch", "z":"c"}
-    if sheng in ["p", "t", "k", "q", "ch", "c"]:
-        temp.append((asp2unasp[sheng], yun))
-    elif sheng in ["b", "d", "g", "j", "zh", "z"]:
-        temp.append((unasp2asp[sheng], yun))
+    asp = ["p", "t", "k", "q", "ch", "c"]
+    unasp = ["b", "d", "g", "j", "zh", "z"]
+    if sheng in asp:
+        temp.append((unasp[asp.index(sheng)], yun))
+    elif sheng in unasp:
+        temp.append((asp[unasp.index(sheng)], yun))
 
     # 齐齿呼-撮口呼 i-v, ie-ve, ian-van, in-vn
     i = ["i", "ie", "ian", "in"]
@@ -205,7 +168,7 @@ def fuzzy_pinyins(orig):
         temp.append((sheng, i[v.index(yun)]))
 
     # 开口呼-合口呼 ["an", "ang", "o", "ang", "a", "ai"] -> "u"+, en-un, ei-ui, eng-ong (此不虑零声母) 
-    aa = ["an", "ang", "o", "ang", "a", "ai",
+    aa = ["an",  "ang",  "o",  "ang",  "a",  "ai",
             "en", "ei", "eng"]
     ua = ["uan", "uang", "uo", "uang", "ua", "uai",
             "un", "ui", "ong"]
