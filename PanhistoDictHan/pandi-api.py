@@ -1,4 +1,4 @@
-# coding:utf-8
+# -*- coding: utf-8 -*-
 from hanzi2mc import hanzis2mcinfos
 import json
 from urllib.parse import parse_qs
