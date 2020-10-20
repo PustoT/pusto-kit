@@ -11,6 +11,7 @@ mapFinals = {}
 
 mapUntInit = {}
 mapUntFin = {}
+mapUntFinPoly = {}
 
 #hanzi = input('Input hanzi')
 hanzis = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
@@ -114,7 +115,7 @@ def mcp2detail(mc):
                 "p", "ph", "b", "m",
                 "k", "kh", "g", "ng",
                 "h", "gh", "q", ""]:
-            fin = 'Yn'        
+            fin = 'Yn'
         
     # Resolve 重紐
     dryungNriux = ""
@@ -134,8 +135,9 @@ def mcp2detail(mc):
     tone = 0 if fin[-1] == 'd' else tone
     tone = "平上去入"[tone]
     yonh_repre = mapFinals[fin][0]
+    mc_repre = mc
     
-    return mux, sjep, yonh, dryungNriux, tongx, ho, tone, yonh_repre
+    return mux, sjep, yonh, dryungNriux, tongx, ho, tone, yonh_repre, mc_repre
 
 def mc_from_ytenx(hanzi):
     url = 'https://ytenx.org/zim?dzih=' + hanzi + '&dzyen=1&jtkb=1&jtkd=1&jtdt=1&jtgt=1'
@@ -180,7 +182,7 @@ def init_maps():
             mapHo[fields[0]] = fields[3]
             mapFinals[fields[0]] = fields[4]
 
-def mc_to_unt(mux, yonh_repre, dryungNriux, tongx, ho, mc, tone):
+def mc_to_unt(mux, yonh_repre, dryungNriux, tongx, ho, mc, tone, mc_repre):
     '''
     方案：声母用poly查，韵母需要按代表韵目、重纽、等、开合，并注意谆清蒸，
         查出音标，再加声调或改入声。因为有汉字，宜明繁简。
@@ -200,11 +202,13 @@ def mc_to_unt(mux, yonh_repre, dryungNriux, tongx, ho, mc, tone):
         elif mux == '曉': unt = 'χ'
         elif mux == '匣': unt = 'ʁ'
     
+    # change 韵目代表、呼 to simplified chinese
     tran2simp = {'魚':'鱼', '齊':'齐', '廢':'废', '眞':'真', '諄':'谆', 
                  '刪':'删', '蕭':'萧', '談':'谈', '鹽':'盐', '銜':'衔', 
                   '嚴':'严', '東':'东', '鍾':'钟', '陽':'阳', '職':'职', '開':'开',}
     if yonh_repre in tran2simp.keys(): yonh_repre = tran2simp[yonh_repre]
     if ho in tran2simp.keys(): ho = tran2simp[ho]
+    
     if yonh_repre == '谆':
         if mux in ['知', '徹', '澄', '娘', '莊', '初', '崇', '生', '俟']:
             unt += 'ɻɥin'
@@ -224,6 +228,14 @@ def mc_to_unt(mux, yonh_repre, dryungNriux, tongx, ho, mc, tone):
             unt += 'iŋ'
         else:
             unt += 'ɻiŋ'
+    elif "支脂祭真仙宵侵盐".find(yonh_repre) >= 0: # 重纽对立者，由于 maigo 程序有一些韵目不区分重纽，但unt 区分，因此根据拼音定重纽
+        possible_names = [yonh_repre + 'A合', yonh_repre + 'A开',yonh_repre + 'A',  yonh_repre + 'B合', yonh_repre + 'B开', 
+                            yonh_repre + 'B']
+        for y in possible_names:
+            if y in mapUntFin.keys() and mc_repre.find(mapUntFinPoly[y]) >= 0: 
+                unt += mapUntFin[y]
+                print(mc_repre, ' wa mc_repre ', y)
+                break
     else:
         if yonh_repre + dryungNriux + ho in mapUntFin.keys(): unt += mapUntFin[yonh_repre + dryungNriux + ho]
         elif yonh_repre + dryungNriux in mapUntFin.keys(): unt += mapUntFin[yonh_repre + dryungNriux]
@@ -272,6 +284,7 @@ def init_unt_maps():
                 continue
             fields = line.strip().split("\t")
             mapUntFin[fields[2]] = fields[3]
+            mapUntFinPoly[fields[2]] = fields[5]
 
 
 init_maps()
@@ -280,9 +293,9 @@ for hanzi in hanzis:
     mcs = mc_from_sqlite(hanzi)
     
     for mc in mcs:
-        mux, sjep, yonh, dryungNriux, tongx, ho, tone, yonh_repre = mcp2detail(mc)
+        mux, sjep, yonh, dryungNriux, tongx, ho, tone, yonh_repre, mc_repre = mcp2detail(mc)
         print(mux + sjep + yonh + dryungNriux + tongx + ho + ' ' + tone + yonh_repre)
-        unt = mc_to_unt(mux, yonh_repre, dryungNriux, tongx, ho, mc, tone)
+        unt = mc_to_unt(mux, yonh_repre, dryungNriux, tongx, ho, mc, tone, mc_repre)
         print(unt)
     
 
