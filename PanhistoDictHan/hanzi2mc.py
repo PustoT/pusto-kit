@@ -17,7 +17,7 @@ mapUntFinPoly = {}
 hanzis = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
 
 def mc_from_sqlite(hanzi):
-    mcs = []
+    mcs, pus = [], []
     unicd = hanzi.encode("unicode_escape")
     unicd = str(unicd) # like b'\\u4e00'
     unicd = unicd[5:-1].upper()
@@ -25,13 +25,14 @@ def mc_from_sqlite(hanzi):
     c = conn.cursor()
     cursor = c.execute("SELECT * FROM mcpdict WHERE unicode = ?", (unicd,))
     for row in cursor:
-        print("unicode = ", row[0])
+        # print("unicode = ", row[0])
         mcs += row[1].split(',')
-        print("mc = ", row[1])
-        print("pu = ", row[2])
-        print("ct = ", row[3], "\n")
+        # print("mc = ", row[1])
+        pus += row[2].split(',')
+        # print("pu = ", row[2])
+        # print("ct = ", row[3], "\n")
     conn.close()
-    return mcs
+    return mcs, pus
 
 # imit https://github.com/MaigoAkisame/MCPDict/blob/master/src/maigosoft/mcpdict/Orthography.java
 def mcp2detail(mc):
@@ -93,7 +94,7 @@ def mcp2detail(mc):
         elif init[-1] == 'j': # 只能拼三等韻，省略介音i
             if fin[0] != 'i' and fin[0] != 'y':
                 fin = 'i' + fin
-    print(fin)
+
     if fin not in mapFinals.keys(): return None
     
     # Distinguish 重韻
@@ -229,12 +230,16 @@ def mc_to_unt(mux, yonh_repre, dryungNriux, tongx, ho, mc, tone, mc_repre):
         else:
             unt += 'ɻiŋ'
     elif "支脂祭真仙宵侵盐".find(yonh_repre) >= 0: # 重纽对立者，由于 maigo 程序有一些韵目不区分重纽，但unt 区分，因此根据拼音定重纽
-        possible_names = [yonh_repre + 'A合', yonh_repre + 'A开',yonh_repre + 'A',  yonh_repre + 'B合', yonh_repre + 'B开', 
-                            yonh_repre + 'B']
+        if mc_repre.find('r') != -1:
+            dryungNriux = 'B'
+        else:
+            dryungNriux = 'A'
+
+        possible_names = [yonh_repre + dryungNriux, yonh_repre + dryungNriux + ho]
         for y in possible_names:
-            if y in mapUntFin.keys() and mc_repre.find(mapUntFinPoly[y]) >= 0: 
+            if y in mapUntFin.keys(): 
                 unt += mapUntFin[y]
-                print(mc_repre, ' wa mc_repre ', y)
+                # print(mc_repre, ' wa mc_repre ', y)
                 break
     else:
         if yonh_repre + dryungNriux + ho in mapUntFin.keys(): unt += mapUntFin[yonh_repre + dryungNriux + ho]
@@ -290,8 +295,9 @@ def init_unt_maps():
 init_maps()
 init_unt_maps()
 for hanzi in hanzis:
-    mcs = mc_from_sqlite(hanzi)
-    
+    print('\n' + hanzi)
+    mcs, pus = mc_from_sqlite(hanzi)
+    print(','.join(pus))
     for mc in mcs:
         mux, sjep, yonh, dryungNriux, tongx, ho, tone, yonh_repre, mc_repre = mcp2detail(mc)
         print(mux + sjep + yonh + dryungNriux + tongx + ho + ' ' + tone + yonh_repre)
