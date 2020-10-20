@@ -291,17 +291,24 @@ def init_unt_maps():
             mapUntFin[fields[2]] = fields[3]
             mapUntFinPoly[fields[2]] = fields[5]
 
-
 init_maps()
 init_unt_maps()
-for hanzi in hanzis:
-    print('\n' + hanzi)
-    mcs, pus = mc_from_sqlite(hanzi)
-    print(','.join(pus))
-    for mc in mcs:
-        mux, sjep, yonh, dryungNriux, tongx, ho, tone, yonh_repre, mc_repre = mcp2detail(mc)
-        print(mux + sjep + yonh + dryungNriux + tongx + ho + ' ' + tone + yonh_repre)
-        unt = mc_to_unt(mux, yonh_repre, dryungNriux, tongx, ho, mc, tone, mc_repre)
-        print(unt)
+
+def hanzis2mcinfos(hanzis):
+    res = ''
+    for hanzi in hanzis:
+        res += '\n' + hanzi
+        print('\n' + hanzi)
+        mcs, pus = mc_from_sqlite(hanzi)
+        res += ','.join(pus)
+        print(','.join(pus))
+        for mc in mcs:
+            mux, sjep, yonh, dryungNriux, tongx, ho, tone, yonh_repre, mc_repre = mcp2detail(mc)
+            res += mux + sjep + yonh + dryungNriux + tongx + ho + ' ' + tone + yonh_repre
+            print(mux + sjep + yonh + dryungNriux + tongx + ho + ' ' + tone + yonh_repre)
+            unt = mc_to_unt(mux, yonh_repre, dryungNriux, tongx, ho, mc, tone, mc_repre)
+            res += unt
+            print(unt)
     
+    return res
 
