@@ -11,7 +11,7 @@ with open("./hanzi.txt", 'r', newline='') as reader:
         han = l.strip()
         res.update({han: m.get(han, [])})
         if han not in m:
-            print(han)
+            print("！！！！！！此字不存在于tupa表" + han)
 print(res)
 
 # with open("./result_hanzi_tupa.txt", 'w', newline='') as writer:
