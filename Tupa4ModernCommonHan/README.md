@@ -26,3 +26,13 @@ The following Hanzi are in the common list but not in tupa.dict.yaml:
     - but 穗
 - 猬
     - but 蝟
+
+最多發音的漢字：
+
+7
+哆      ['tah', 'taq', 'tjhiaeq', 'tjhieq', 'tjhyh', 'traeh', 'trhae']
+
+最多同音字的發音：
+
+13
+leng    ['冷', '拎', '令', '伶', '蛉', '零', '齡', '鈴', '玲', '羚', '聆', '翎', '靈']

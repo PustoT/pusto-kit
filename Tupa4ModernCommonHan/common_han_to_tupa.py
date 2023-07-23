@@ -27,3 +27,15 @@ print(res_tupa_han)
 with open("./result_tupa_hanzi.txt", 'w', newline='') as writer:
     for tupa, hans in res_tupa_han.items():
         writer.write(tupa + '\t' + str(hans) + '\n')
+
+max_cnt_pronunciations = max([len(v) for v in res_han_tupa.values()])
+print(max_cnt_pronunciations)
+for han, tupas in res_han_tupa.items():
+    if len(tupas) == max_cnt_pronunciations:
+        print(han + '\t' + str(tupas))
+
+max_cnt_homophones = max([len(v) for v in res_tupa_han.values()])
+print(max_cnt_homophones)
+for tupa, hans in res_tupa_han.items():
+    if len(hans) == max_cnt_homophones:
+        print(tupa + '\t' + str(hans))
