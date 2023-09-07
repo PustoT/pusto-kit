@@ -27,8 +27,10 @@ def mc_from_sqlite(hanzi):
 
 def verify_ans(target_lang, hanzi, ans):
     lang2n = {'mc': 1, 'pu': 2, 'yue': 3, 'wuu': 4, 'nan': 5}
-    trues = mc_from_sqlite(hanzi)[lang2n[target_lang] - 1]
-    return ans in trues, trues
+    entries = mc_from_sqlite(hanzi)
+    trues = entries[lang2n[target_lang] - 1]
+    mcs = entries[0]
+    return ans in trues, trues, mcs
 
 common_hanzis = []
 with open("./common-hanzi.txt", 'r', newline='') as reader:
@@ -49,9 +51,11 @@ while True:
         hanzi = random.choice(common_hanzis)
         print('Your random han is ', hanzi)
     ans = input('Input your answer: ')
-    res, trues = verify_ans(target_lang, hanzi, ans)
+    res, trues, mcs = verify_ans(target_lang, hanzi, ans)
     if res == True:
-        print('＜（＾－＾）＞ Correct!')
+        print('＜（＾－＾）＞ Correct! The answers are ', trues)
+        print('The Middle Chinese KYonhs are: ', mcs)
     else:
         print('xxxxx False! The answer should be: ', trues)
+        print('The Middle Chinese KYonhs are: ', mcs)
     # TODO: remind the Middle Chinese information
