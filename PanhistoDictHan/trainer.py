@@ -42,20 +42,32 @@ print(mc_from_sqlite('阱'))
 
 target_lang = input('What to learn (mc, pu, yue, wuu, nan): ')
 
+isRandomMode = False
 while True:
-
-    hanzi = input('Input a 漢字 hanzi or "exit", or blank for random hanzi: ')
+    print('\n')
+    hanzi = ''
+    if not isRandomMode:
+        hanzi = input('輸入漢字或「exit」 Input a 漢字 hanzi or "exit", \n或留白以（全程）隨機 or blank for random hanzi (the entire session): ')
     if hanzi == 'exit':
         break
     elif hanzi == '':
+        isRandomMode = True
         hanzi = random.choice(common_hanzis)
-        print('Your random han is ', hanzi)
-    ans = input('Input your answer: ')
+        print('請回答此隨機漢字 Answer this random han: ', hanzi)
+        print("\033[1;33m" + "(*´･д･)? " + hanzi + "\033[0m")
+    
+    print('Input your answer: ')
+    ans = input('>> ')
+
+    if ans == 'exit':
+        isRandomMode = False
+        continue
+
     res, trues, mcs = verify_ans(target_lang, hanzi, ans)
     if res == True:
-        print('＜（＾－＾）＞ Correct! The answers are ', trues)
+        print("\033[1;32m" + '(♥ω♥*) Correct! The answers are ' + str(trues) + "\033[0m")
         print('The Middle Chinese KYonhs are: ', mcs)
     else:
-        print('xxxxx False! The answer should be: ', trues)
+        print("\033[1;31m" + '(°ω°) False! The answer should be: ' + str(trues) + "\033[0m")
         print('The Middle Chinese KYonhs are: ', mcs)
     # TODO: remind the Middle Chinese information
