@@ -441,7 +441,7 @@
 港	['ghoungh', 'koeungq']
 膏	['kaw', 'kawh']
 告	['kawh', 'kok']
-格	['kaek', 'kak']
+格	['kaek']  # , 'kak'
 頜	['ghomq', 'kop']
 合	['ghop', 'kop']
 更	['kaeng', 'kaengh']
