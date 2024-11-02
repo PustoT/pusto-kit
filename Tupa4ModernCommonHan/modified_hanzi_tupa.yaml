@@ -414,7 +414,7 @@
 墳	['bun', 'bunq']
 份	['bunh', 'pyin']
 忿	['phunh', 'phunq']
-風	['pung', 'pungh']
+風	['pung']  # , 'pungh'
 封	['puong', 'puongh']
 蜂	['boung', 'phuong']
 縫	['buong', 'buongh']
