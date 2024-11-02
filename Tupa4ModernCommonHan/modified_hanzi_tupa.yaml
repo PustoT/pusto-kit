@@ -492,7 +492,7 @@
 唬	['haeh', 'kwaek']
 嘩	['ghwae', 'hwae']
 劃	['ghweek', 'hweek']
-畫	['ghweeh', 'ghweek']
+畫	['ghweeh']  # , 'ghweek'
 樺	['ghwae', 'ghwaeh']
 槐	['ghoj', 'ghweej']
 壞	['ghweejh', 'kweejh']
@@ -564,7 +564,7 @@
 經	['keng', 'kengh']
 莖	['gheeng', 'qeeng']
 精	['tsiaeng', 'tsiaengh']
-睛	['tshiaengq', 'tsiaeng']
+睛	['tsiaeng']  # 'tshiaengq', 
 灸	['kuh', 'kuq']
 咎	['guq', 'kaw']
 臼	['guq', 'kuk']
