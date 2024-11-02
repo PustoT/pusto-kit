@@ -344,7 +344,7 @@
 磋	['tsha', 'tshah']
 撮	['tshwat', 'tswat']
 錯	['tshak', 'tshoh']
-打	['taengq', 'tengq']
+打	['taengq']  # , 'tengq'
 達	['dat', 'that']
 大	['dah', 'dajh']
 呆	['ngeoj', 'teoj']
